@@ -3,7 +3,7 @@
     "_postman_id": "7a2c2a9d-8a3f-4b65-9e66-0d0ed82c9a33",
     "name": "EC3 Leads API",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "EC3 assessment - FastAPI + MariaDB Leads CRUD collection."
+    "description": "EC3 assessment - FastAPI + MariaDB Leads CRUD + CSV report."
   },
   "item": [
     {
@@ -50,11 +50,7 @@
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
             ],
             "body": {
               "mode": "raw",
@@ -182,11 +178,7 @@
           "request": {
             "method": "PUT",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              }
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
             ],
             "body": {
               "mode": "raw",
@@ -233,6 +225,79 @@
                   "// Accept 204 if deleted, 404 if already missing",
                   "pm.test('Status is 204 or 404', function () {",
                   "  pm.expect([204, 404]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "GET Leads Report (CSV)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/leads/report",
+              "host": ["{{baseUrl}}"],
+              "path": ["leads", "report"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type includes text/csv', function () {",
+                  "  pm.expect(pm.response.headers.get('Content-Type') || '').to.include('text/csv');",
+                  "});",
+                  "",
+                  "pm.test('Content-Disposition includes attachment', function () {",
+                  "  const cd = pm.response.headers.get('Content-Disposition') || '';",
+                  "  pm.expect(cd.toLowerCase()).to.include('attachment');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "GET Leads Report (CSV with Filters)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/leads/report?from_date=2026-01-01&to_date=2026-12-31&source=Referral",
+              "host": ["{{baseUrl}}"],
+              "path": ["leads", "report"],
+              "query": [
+                { "key": "from_date", "value": "2026-01-01" },
+                { "key": "to_date", "value": "2026-12-31" },
+                { "key": "source", "value": "Referral" }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Content-Type includes text/csv', function () {",
+                  "  pm.expect(pm.response.headers.get('Content-Type') || '').to.include('text/csv');",
                   "});"
                 ]
               }

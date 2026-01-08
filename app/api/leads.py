@@ -1,14 +1,81 @@
 from typing import List, Optional
+from datetime import date, datetime, time
+import csv
+import io
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 
-from app.db.session import get_db   # ✅ FIX IS HERE
+from app.db.session import get_db
 from app.models.lead import Lead
 from app.schemas.lead import LeadCreate, LeadUpdate, LeadResponse
 
 router = APIRouter(prefix="/leads", tags=["Leads"])
+
+
+@router.get("/report")
+def leads_report(
+    db: Session = Depends(get_db),
+    from_date: Optional[date] = Query(None, description="Filter from date (YYYY-MM-DD)"),
+    to_date: Optional[date] = Query(None, description="Filter to date (YYYY-MM-DD)"),
+    name: Optional[str] = Query(None, description="Filter by name (contains)"),
+    email: Optional[str] = Query(None, description="Filter by exact email"),
+    source: Optional[str] = Query(None, description="Filter by source (contains)"),
+):
+    """
+    Generate and download a CSV report of leads with optional filters.
+
+    Filters:
+    - from_date/to_date apply to created_time
+    - name/source use case-insensitive 'contains'
+    - email uses exact match
+    """
+    query = db.query(Lead)
+
+    filters = []
+
+    if from_date:
+        start_dt = datetime.combine(from_date, time.min)
+        filters.append(Lead.created_time >= start_dt)
+
+    if to_date:
+        end_dt = datetime.combine(to_date, time.max)
+        filters.append(Lead.created_time <= end_dt)
+
+    if name:
+        filters.append(Lead.name.ilike(f"%{name}%"))
+
+    if email:
+        filters.append(Lead.email == email)
+
+    if source:
+        filters.append(Lead.source.ilike(f"%{source}%"))
+
+    if filters:
+        query = query.filter(and_(*filters))
+
+    leads = query.order_by(Lead.created_time.desc()).all()
+
+    def generate():
+        buffer = io.StringIO()
+        writer = csv.writer(buffer)
+
+        # Header
+        writer.writerow(["id", "name", "email", "phone", "source", "created_time"])
+
+        # Rows
+        for lead in leads:
+            created = lead.created_time.isoformat(sep=" ") if lead.created_time else ""
+            writer.writerow([lead.id, lead.name, lead.email, lead.phone or "", lead.source or "", created])
+
+        yield buffer.getvalue()
+
+    filename = f"leads_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+    headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
+
+    return StreamingResponse(generate(), media_type="text/csv", headers=headers)
 
 
 @router.post(
