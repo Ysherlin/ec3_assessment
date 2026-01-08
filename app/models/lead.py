@@ -1,10 +1,7 @@
+from datetime import datetime
+
 from sqlalchemy import Column, Integer, String, DateTime
-from sqlalchemy.sql import func
-
-from app.db.session import engine
-from sqlalchemy.orm import declarative_base
-
-Base = declarative_base()
+from app.db.database import Base
 
 
 class Lead(Base):
@@ -12,10 +9,12 @@ class Lead(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False)
-    email = Column(String(255), nullable=False, unique=True)
+    email = Column(String(255), nullable=False, unique=True, index=True)
     phone = Column(String(50), nullable=True)
     source = Column(String(255), nullable=True)
-    created_time = Column(DateTime(timezone=True), server_default=func.now())
 
-
-Base.metadata.create_all(bind=engine)
+    created_time = Column(
+        DateTime,
+        nullable=False,
+        default=datetime.utcnow
+    )
