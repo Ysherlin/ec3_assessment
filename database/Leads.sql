@@ -28,18 +28,6 @@ CREATE TABLE leads (
 );
 
 -- =====================================================
--- Mock data (required by assessment)
--- =====================================================
-
-INSERT INTO leads (name, email, phone, source, created_time)
-VALUES
-('John Doe', 'john.doe@example.com', '0123456789', 'Website', NOW()),
-('Jane Smith', 'jane.smith@example.com', '0987654321', 'Referral', NOW()),
-('Bob Brown', 'bob.brown@example.com', NULL, 'Email Campaign', NOW()),
-('Alice Green', 'alice.green@example.com', '0112233445', 'Social Media', NOW()),
-('Michael White', 'michael.white@example.com', NULL, 'Cold Call', NOW());
-
--- =====================================================
 -- Verification query
 -- =====================================================
 
